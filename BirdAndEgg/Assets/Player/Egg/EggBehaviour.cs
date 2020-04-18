@@ -7,9 +7,15 @@ public class EggBehaviour : MonoBehaviour
     [SerializeField] private Transform _head;
     [SerializeField] private float _maxSnapDistance, _snapSpeed;
 
+    //compoenents
+    private Rigidbody2D _rb;
+
     // Start is called before the first frame update
     void Start()
     {
+        //get components
+        _rb = GetComponent<Rigidbody2D>();
+
         transform.parent = _head;
     }
 
@@ -23,7 +29,10 @@ public class EggBehaviour : MonoBehaviour
         // }
     }
 
-    void Balancing(){
-        
+    public void Fall(){
+        transform.parent = null;
+        _rb.bodyType = RigidbodyType2D.Dynamic;
+        _rb.AddForce(new Vector2(1000, 0));
+        Debug.Log("fall!");
     }
 }

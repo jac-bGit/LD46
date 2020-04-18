@@ -5,9 +5,10 @@ using UnityEngine;
 public class PlayerBehaviour : MonoBehaviour
 {
     //movement
-    [SerializeField] private int _maxSpeed;
-    public int speed;
-    [SerializeField] private float _acceleration, _decceleration;
+    [SerializeField] private float _maxSpeed;
+    public float CurrentSpeed { get { return _rb.velocity.x; } }
+
+    [SerializeField] private float _acceleration, _decceleration, _stoppingDec;
     [SerializeField] private float _legCycleTime;
     [SerializeField] private bool _isRunning;
     [SerializeField] private bool _lockedLegInput;
@@ -27,12 +28,17 @@ public class PlayerBehaviour : MonoBehaviour
     //components
     private Rigidbody2D _rb;
 
+    //references
+    private EggBehaviour _eggBehaviour;
 
     // Start is called before the first frame update
     void Start()
     {
         //get components
         _rb = GetComponent<Rigidbody2D>();
+
+        //get references
+        _eggBehaviour = FindObjectOfType<EggBehaviour>();
 
         //setup
         _immidiateStop = false;
@@ -93,25 +99,28 @@ public class PlayerBehaviour : MonoBehaviour
         if(!_immidiateStop)
             SlowDown(1);
         else
-            SlowDown(10);
+            SlowDown(_stoppingDec);
+
+        if(_rb.velocity.x > _maxSpeed)
+            _rb.velocity = new Vector2(_maxSpeed, 0);
     }
 
     private IEnumerator LegCycle(float time, GameObject lefGO){
         _lockedLegInput = true;
         _immidiateStop = false;
         _stopTime = _stopTimeMax;
-        _slowDownTime = _legCycleTime / 2;
+        _slowDownTime = _legCycleTime;
         _rb.AddForce(new Vector2(_acceleration,0));
-        Debug.Log("run");
+        // Debug.Log("run");
         yield return new WaitForSeconds(time);
         _lockedLegInput = false;
         _isRunning = false;
-        Debug.Log("stop");
+        // Debug.Log("stop");
     }
 
     private void SlowDown(float mod){
         if(_rb.velocity.x > 0){
-            if(_slowDownTime > _legCycleTime / 2){
+            if(_slowDownTime > _legCycleTime / 4){
                 _slowDownTime -= Time.deltaTime;
             }
             else{
@@ -123,5 +132,26 @@ public class PlayerBehaviour : MonoBehaviour
             _rb.velocity = new Vector2(0, 0);
     }
 
+    void OnTriggerEnter2D(Collider2D col){
+        if(col.gameObject.tag == "Obstacle"){
+            //check speed
+            SpeedHitCheck();
+        }
+    }
 
+    public void SpeedHitCheck(){
+        //light
+        if(_rb.velocity.x < (float)_maxSpeed / 2){
+            Debug.Log("light hit!" + (float)_maxSpeed / 2);
+        }
+        //mid
+
+        //hard
+        if(_rb.velocity.x >= (float)_maxSpeed / 2){
+            _eggBehaviour.Fall();
+            Debug.Log("hard hit!");
+        }
+
+        _rb.velocity = new Vector2(0,0);
+    }
 }

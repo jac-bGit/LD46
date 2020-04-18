@@ -18,16 +18,12 @@ public class ObstacleGround : Obstacle
     // Update is called once per frame
     void Update()
     {
-        _collider.isTrigger = !isActive;               
+        // _collider.isTrigger = !isActive;               
     }
 
-    void OnCollisionEnter2D(Collision2D col){
+    void OnTriggerEnter2D(Collider2D col){
         if(col.gameObject.tag == "Player"){
             isActive = false;
-            Debug.Log("hit");
-        }
-        else{
-            Debug.Log("else sdfsdfwd hit");
         }
     }
 }
