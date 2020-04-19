@@ -7,7 +7,10 @@ public class PlayerBehaviour : MonoBehaviour
     //movement
     [SerializeField] private float _maxSpeed;
     public float CurrentSpeed { get { return _rb.velocity.x; } }
-
+    [SerializeField] private int _jumpForce, _jumpHighForce;
+    [Range(0,1)]
+    [SerializeField] private float _jumpHighUnlock;
+    [SerializeField] private float _jumpInput;
     [SerializeField] private float _acceleration, _decceleration, _stoppingDec;
     [SerializeField] private float _legCycleTime;
     [SerializeField] private bool _isRunning;
@@ -30,6 +33,7 @@ public class PlayerBehaviour : MonoBehaviour
 
     //references
     private EggBehaviour _eggBehaviour;
+    private PlayerBody _body;
 
     // Start is called before the first frame update
     void Start()
@@ -39,6 +43,7 @@ public class PlayerBehaviour : MonoBehaviour
 
         //get references
         _eggBehaviour = FindObjectOfType<EggBehaviour>();
+        _body = GetComponentInChildren<PlayerBody>();
 
         //setup
         _immidiateStop = false;
@@ -48,11 +53,26 @@ public class PlayerBehaviour : MonoBehaviour
     void Update()
     {
         Movement();
+        if(_body.IsGrounded){
+            if(Input.GetKey(KeyCode.Space)){
+                if(_jumpInput < 1.0)
+                    _jumpInput += Time.deltaTime;
+            }
+            
+            if(_jumpInput < _jumpHighUnlock && Input.GetKeyUp(KeyCode.Space)){
+                _body.Jump(_jumpForce);
+                _jumpInput = 0;
+            }
+            else if(_jumpInput >= _jumpHighUnlock){
+                _body.Jump(_jumpHighForce);
+                _jumpInput = 0;
+            }
+        }
     }
 
     private void Movement(){
 
-        if(!_lockedLegInput){
+        if(!_lockedLegInput && _body.IsGrounded){
             //Inputs
             if(Input.GetKeyDown(KeyCode.A) && _legInput != LegInput.Left){
                 _legInput = LegInput.Left;
@@ -96,10 +116,12 @@ public class PlayerBehaviour : MonoBehaviour
         }
 
         //slowing
-        if(!_immidiateStop)
-            SlowDown(1);
-        else
-            SlowDown(_stoppingDec);
+        if(_body.IsGrounded){
+            if(!_immidiateStop)
+                SlowDown(1);
+            else
+                SlowDown(_stoppingDec);
+        }
 
         if(_rb.velocity.x > _maxSpeed)
             _rb.velocity = new Vector2(_maxSpeed, 0);
@@ -130,13 +152,6 @@ public class PlayerBehaviour : MonoBehaviour
         }
         if(_rb.velocity.x < 0)
             _rb.velocity = new Vector2(0, 0);
-    }
-
-    void OnTriggerEnter2D(Collider2D col){
-        if(col.gameObject.tag == "Obstacle"){
-            //check speed
-            SpeedHitCheck();
-        }
     }
 
     public void SpeedHitCheck(){
